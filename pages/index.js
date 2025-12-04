@@ -11,8 +11,8 @@ const styles = {
     // Estilos Globais e Mobile-First
     container: { fontFamily: 'Inter, sans-serif', padding: '0', margin: '0', backgroundColor: DARK_BG, minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', color: '#F0F0F0' },
     
-    // Container Principal (Card) - Sombra limpa, sem bordas
-    main: { maxWidth: '1000px', width: '95%', margin: '30px auto', backgroundColor: CARD_BG, padding: '35px 20px', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0, 0, 0, 0.9)' },
+    // Container Principal (Card) - Sem Borda
+    main: { maxWidth: '1000px', width: '95%', margin: '30px auto', backgroundColor: CARD_BG, padding: '35px 20px', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0, 0, 0, 0.9)', border: 'none !important', outline: 'none !important' },
     
     // Título e Subtítulo
     title: { color: ACCENT_COLOR, textAlign: 'center', marginBottom: '8px', fontSize: '2rem', fontWeight: 700 },
@@ -21,26 +21,26 @@ const styles = {
     // Formulário e Inputs
     form: { display: 'flex', gap: '10px', marginBottom: '30px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' },
     fileInputLabel: {
-        flex: '1 1 100%', padding: '16px', borderRadius: '8px', border: `1px solid ${ACCENT_COLOR}`, backgroundColor: '#252525', color: '#F0F0F0', fontSize: '1rem', cursor: 'pointer', textAlign: 'center', transition: 'background-color 0.3s, border-color 0.3s'
+        flex: '1 1 100%', padding: '16px', borderRadius: '8px', border: `1px solid ${ACCENT_COLOR}`, backgroundColor: '#252525', color: '#F0F0F0', fontSize: '1rem', cursor: 'pointer', textAlign: 'center', transition: 'background-color 0.3s, border-color 0.3s', outline: 'none !important', border: 'none !important' // Borda e Outline Removidos
     },
     
     // Botão de Ação
-    button: { flex: '1 1 100%', padding: '16px 25px', backgroundColor: ACCENT_COLOR, color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', transition: 'background-color 0.3s' },
+    button: { flex: '1 1 100%', padding: '16px 25px', backgroundColor: ACCENT_COLOR, color: 'white', border: 'none !important', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', transition: 'background-color 0.3s', outline: 'none !important' },
     buttonDisabled: { backgroundColor: '#444444', cursor: 'not-allowed', opacity: 0.7 },
 
     // Mensagens de Estado
     error: { color: '#FFEB3B', padding: '12px', backgroundColor: '#383015', borderLeft: '4px solid #FFEB3B', borderRadius: '4px', textAlign: 'center', marginBottom: '20px' },
     loadingText: { color: ACCENT_COLOR, fontSize: '1.1em', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 0' },
     
-    // Área de Resultados (Linha divisória removida ou suavizada)
+    // Área de Resultados (Linha divisória suavizada)
     imageContainer: { marginTop: '20px', paddingTop: '20px', textAlign: 'center' },
     resultTitle: { color: '#F0F0F0', fontSize: '1.4rem', marginBottom: '20px', borderBottom: `1px solid #222222`, paddingBottom: '8px', fontWeight: 600 },
     
-    // Layout do Comparativo (Mobile: Coluna)
+    // Comparativo (Padrão mobile: Coluna)
     imageWrapper: { display: 'flex', gap: '15px', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', marginBottom: '25px' },
     
-    // Imagem (Nenhuma Borda e Sombra sutil)
-    image: { maxWidth: '100%', height: 'auto', borderRadius: '6px', boxShadow: '0 0 5px rgba(0, 0, 0, 0.7)', border: 'none' }, 
+    // Imagem (Nenhuma Borda ou Sombra Clara)
+    image: { maxWidth: '100%', height: 'auto', borderRadius: '6px', boxShadow: '0 0 5px rgba(0, 0, 0, 0.7)', border: 'none !important', outline: 'none !important' }, // BORDA EXCLUÍDA
     
     // Link de Download
     downloadLink: { display: 'inline-block', padding: '12px 25px', backgroundColor: ACCENT_COLOR, color: 'white', textDecoration: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', transition: 'background-color 0.3s' },
@@ -129,21 +129,23 @@ export default function Home() {
         <div style={styles.container}>
             <Head>
                 <title>AI Upscaler Pro</title>
-                {/* Usando uma fonte mais moderna para profissionalismo */}
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
                 
-                {/* Estilos Responsivos Otimizados */}
+                {/* Estilos Responsivos Otimizados (Usando !important para forçar a remoção de bordas/outlines) */}
                 <style dangerouslySetInnerHTML={{__html: `
-                    /* O estilo 'border: none' foi forçado na imagem e no container */
+                    /* Força a remoção de outlines em foco para inputs e botões (causa comum de bordas) */
+                    input:focus, button:focus, label:focus { outline: none !important; }
+                    
                     @media (min-width: 768px) {
                         .main-container { margin-top: 40px; padding: 40px; }
                         .form-container { flex-wrap: nowrap; }
-                        .file-label { flex: 1 1 65% !important; }
+                        .file-label { flex: 1 1 65% !important; border: none !important; }
                         .submit-button { flex: 1 1 30% !important; }
                         
                         /* Layout do Comparativo */
                         .image-wrapper { flex-direction: row !important; }
-                        .comp-image { max-width: 45% !important; }
+                        /* Aplica a remoção definitiva da borda na imagem */
+                        .comp-image { max-width: 45% !important; border: none !important; outline: none !important; box-shadow: 0 0 5px rgba(0, 0, 0, 0.7) !important; }
                     }
                 `}} />
             </Head>
