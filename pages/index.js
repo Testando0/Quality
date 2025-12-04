@@ -9,10 +9,30 @@ const CARD_BG = '#151515';      // Fundo do Container Principal
 // Estilos Base (CSS-in-JS)
 const styles = {
     // Estilos Globais e Mobile-First
-    container: { fontFamily: 'Inter, sans-serif', padding: '0', margin: '0', backgroundColor: DARK_BG, minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', color: '#F0F0F0' },
+    container: { 
+        fontFamily: 'Inter, sans-serif', 
+        padding: '0', 
+        margin: '0', 
+        backgroundColor: DARK_BG, 
+        minHeight: '100vh', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'flex-start', // Começa no topo (sem borda no topo)
+        color: '#F0F0F0' 
+    },
     
-    // Container Principal (Card) - Sem Borda
-    main: { maxWidth: '1000px', width: '95%', margin: '30px auto', backgroundColor: CARD_BG, padding: '35px 20px', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0, 0, 0, 0.9)', border: 'none !important', outline: 'none !important' },
+    // Container Principal (Card) - Sem Borda e ocupando toda a largura
+    main: { 
+        maxWidth: '1000px', 
+        width: '100%', // Ocupa 100% no mobile, sem margens laterais
+        margin: '0 auto', // Margens automáticas
+        backgroundColor: CARD_BG, 
+        padding: '30px 20px', 
+        borderRadius: '0', // Sem bordas arredondadas no mobile para ocupar 100%
+        boxShadow: 'none', // Sombra removida aqui para garantir
+        border: 'none !important', 
+        outline: 'none !important' 
+    },
     
     // Título e Subtítulo
     title: { color: ACCENT_COLOR, textAlign: 'center', marginBottom: '8px', fontSize: '2rem', fontWeight: 700 },
@@ -21,7 +41,7 @@ const styles = {
     // Formulário e Inputs
     form: { display: 'flex', gap: '10px', marginBottom: '30px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' },
     fileInputLabel: {
-        flex: '1 1 100%', padding: '16px', borderRadius: '8px', border: `1px solid ${ACCENT_COLOR}`, backgroundColor: '#252525', color: '#F0F0F0', fontSize: '1rem', cursor: 'pointer', textAlign: 'center', transition: 'background-color 0.3s, border-color 0.3s', outline: 'none !important', border: 'none !important' // Borda e Outline Removidos
+        flex: '1 1 100%', padding: '16px', borderRadius: '8px', border: `1px solid ${ACCENT_COLOR}`, backgroundColor: '#252525', color: '#F0F0F0', fontSize: '1rem', cursor: 'pointer', textAlign: 'center', transition: 'background-color 0.3s, border-color 0.3s', outline: 'none !important'
     },
     
     // Botão de Ação
@@ -40,7 +60,7 @@ const styles = {
     imageWrapper: { display: 'flex', gap: '15px', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', marginBottom: '25px' },
     
     // Imagem (Nenhuma Borda ou Sombra Clara)
-    image: { maxWidth: '100%', height: 'auto', borderRadius: '6px', boxShadow: '0 0 5px rgba(0, 0, 0, 0.7)', border: 'none !important', outline: 'none !important' }, // BORDA EXCLUÍDA
+    image: { maxWidth: '100%', height: 'auto', borderRadius: '6px', boxShadow: '0 0 5px rgba(0, 0, 0, 0.7)', border: 'none !important', outline: 'none !important' },
     
     // Link de Download
     downloadLink: { display: 'inline-block', padding: '12px 25px', backgroundColor: ACCENT_COLOR, color: 'white', textDecoration: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', transition: 'background-color 0.3s' },
@@ -131,20 +151,27 @@ export default function Home() {
                 <title>AI Upscaler Pro</title>
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
                 
-                {/* Estilos Responsivos Otimizados (Usando !important para forçar a remoção de bordas/outlines) */}
+                {/* ESTILOS DE LIMPEZA GERAL E RESPONSIVIDADE FORÇADA */}
                 <style dangerouslySetInnerHTML={{__html: `
-                    /* Força a remoção de outlines em foco para inputs e botões (causa comum de bordas) */
-                    input:focus, button:focus, label:focus { outline: none !important; }
+                    /* RESET TOTAL DE BORDA E MARGENS */
+                    body, html { margin: 0 !important; padding: 0 !important; }
+                    /* FORÇA REMOÇÃO DE BORDAS/OUTLINES EM TODOS OS ELEMENTOS */
+                    *, *::before, *::after { border: none !important; outline: none !important; box-shadow: none !important; }
                     
                     @media (min-width: 768px) {
-                        .main-container { margin-top: 40px; padding: 40px; }
+                        .main-container { 
+                            margin: 40px auto !important; 
+                            padding: 40px !important;
+                            width: 95% !important; 
+                            border-radius: 12px !important; /* Retorna o arredondamento no desktop */
+                            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.9) !important; /* Retorna a sombra no desktop */
+                        }
                         .form-container { flex-wrap: nowrap; }
-                        .file-label { flex: 1 1 65% !important; border: none !important; }
+                        .file-label { flex: 1 1 65% !important; }
                         .submit-button { flex: 1 1 30% !important; }
                         
                         /* Layout do Comparativo */
                         .image-wrapper { flex-direction: row !important; }
-                        /* Aplica a remoção definitiva da borda na imagem */
                         .comp-image { max-width: 45% !important; border: none !important; outline: none !important; box-shadow: 0 0 5px rgba(0, 0, 0, 0.7) !important; }
                     }
                 `}} />
