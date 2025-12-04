@@ -2,8 +2,8 @@ import fetch from 'node-fetch';
 
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
-// ID do Modelo Replicate para Upscale (usando o Real-ESRGAN, popular para 4x)
-const REPLICATE_MODEL_VERSION = "42fed1c4974146d4d2414e2be2c5277c7f7fab052204f7fd9c181d40306c50be";
+// ID da Versão CORRETA e ATUALIZADA do modelo Real-ESRGAN (xinntao/realesrgan)
+const REPLICATE_MODEL_VERSION = "1b976a4d456ed9e4d1a846597b7614e79eadad3032e9124fa63859db0fd59b56"; 
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -30,11 +30,11 @@ export default async function handler(req, res) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                version: REPLICATE_MODEL_VERSION,
+                version: REPLICATE_MODEL_VERSION, // Usa a versão corrigida
                 input: {
-                    // O Replicate aceita a URL pública da imagem aqui
                     image: imageUrl, 
-                    scale: 4, // Upscale de 4x
+                    scale: 4, 
+                    version: "General - v3", // Usando a sub-versão geral otimizada
                 },
             }),
         });
@@ -51,7 +51,8 @@ export default async function handler(req, res) {
         // 2. Sondar o resultado (Polling)
         let prediction = startData;
         while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo
+            // Pequena pausa para evitar sobrecarga de chamadas
+            await new Promise(resolve => setTimeout(resolve, 1000)); 
             
             const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
                 headers: { "Authorization": `Token ${REPLICATE_API_TOKEN}` },
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
                 message: 'Upscale concluído com sucesso.'
             });
         } else {
-             return res.status(500).json({ message: 'O Replicate retornou um resultado vazio.' });
+             return res.status(500).json({ message: 'O Replicate retornou um resultado vazio ou inesperado.' });
         }
 
     } catch (error) {
