@@ -2,8 +2,7 @@ import fetch from 'node-fetch';
 
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
-// USANDO UM MODELO DE RESTAURAÇÃO DE IMAGEM ALTERNATIVO (sczhou/codeformer)
-// ID da Versão ESTÁVEL (sczhou/codeformer)
+// USANDO O ID DA VERSÃO ESTÁVEL (sczhou/codeformer:v1.3)
 const REPLICATE_MODEL_VERSION = "7de2ea2a1c0d59265c0934988f83039d91cb6f24d4c82c6218c5ff217d8004f1"; 
 
 export default async function handler(req, res) {
@@ -31,11 +30,11 @@ export default async function handler(req, res) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                version: REPLICATE_MODEL_VERSION,
+                version: REPLICATE_MODEL_VERSION, // ID ESTÁVEL
                 input: {
-                    image: imageUrl,             // Campo de entrada deste modelo é 'image'
-                    face_upsample: true,         // Parâmetro específico para melhoria de faces
-                    codeformer_fidelity: 0.5     // Nível de fidelidade
+                    image: imageUrl, 
+                    face_upsample: true, 
+                    codeformer_fidelity: 0.5 
                 },
             }),
         });
@@ -48,9 +47,11 @@ export default async function handler(req, res) {
             let errorMessage = startData.detail || startData.message || 'Erro desconhecido.';
             
             if (startResponse.status === 401) {
-                errorMessage = "FALHA DE PERMISSÃO (401): O Token está inválido. Por favor, **gere um novo Token**.";
+                // Se for 401, a falha é no Token.
+                errorMessage = "FALHA DE PERMISSÃO (401): Seu Token está inválido. Por favor, **gere um novo Token**.";
             } else if (startData.detail && startData.detail.includes("version does not exist")) {
-                 errorMessage = "FALHA NA VERSÃO (404): O ID do modelo falhou novamente. A única solução é a falha no Token.";
+                 // Se o 404 persistir, não há mais como contornar.
+                 errorMessage = "FALHA FINAL NA VERSÃO (404): O Replicate está rejeitando a versão estável. O serviço pode estar em manutenção ou o Token é a única falha restante.";
             }
             
             return res.status(startResponse.status).json({ message: `Falha na previsão: ${errorMessage}` });
@@ -74,7 +75,6 @@ export default async function handler(req, res) {
         }
 
         // 4. Retornar a URL
-        // O output deste modelo retorna um array, pegamos o primeiro elemento
         if (prediction.output && prediction.output.length > 0) {
             const upscaledUrl = prediction.output[0]; 
             return res.status(200).json({ upscaledUrl: upscaledUrl, message: 'Upscale concluído com sucesso.' });
