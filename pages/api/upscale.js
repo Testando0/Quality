@@ -1,10 +1,11 @@
 import fetch from 'node-fetch';
 
+// Garanta que esta variável de ambiente está configurada no Vercel
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
-// USANDO UM MODELO DE SUPER-RESOLUÇÃO DIFERENTE E MAIS ESTÁVEL: tstramer/resrgan
-// ID da Versão MAIS ESTÁVEL: 195724285871f3918a93a8e97cc9611f7c5553b5e40e2b3c7b3967814b748281
-const REPLICATE_MODEL_VERSION = "195724285871f3918a93a8e97cc9611f7c5553b5e40e2b3c7b3967814b748281"; 
+// ID da Versão ESTÁVEL (xinntao/realesrgan - Dezembro/2025)
+// Este ID deve ser o correto para o modelo que você está usando.
+const REPLICATE_MODEL_VERSION = "7b58129048a176846747d6929a56526ac87f6515c0e81b67f1b40289f64e0a4f"; 
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -12,9 +13,8 @@ export default async function handler(req, res) {
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 
-    // 🚨 VERIFICAÇÃO CRÍTICA 1: Token (Permissão)
     if (!REPLICATE_API_TOKEN) {
-        return res.status(500).json({ message: 'Erro: REPLICATE_API_TOKEN não está configurada.' });
+        return res.status(500).json({ message: 'ERRO CRÍTICO: REPLICATE_API_TOKEN não configurada.' });
     }
     
     const { imageUrl } = req.body;
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 1. Iniciar a previsão (upscale) no Replicate
+        // 1. INICIAR PREVISÃO com PARÂMETROS CORRETOS
         const startResponse = await fetch("https://api.replicate.com/v1/predictions", {
             method: "POST",
             headers: {
@@ -32,27 +32,29 @@ export default async function handler(req, res) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                version: REPLICATE_MODEL_VERSION, // Usando o modelo estável
+                version: REPLICATE_MODEL_VERSION,
                 input: {
-                    image: imageUrl, 
-                    scale: 4, 
+                    // Parâmetros do Modelo, seguindo o esquema que você forneceu:
+                    img: imageUrl,             // Campo 'img' (Input required)
+                    version: "General - v3",   // Campo 'version' (Modelo estável e tiny para imagens gerais)
+                    scale: 4,                  // Campo 'scale' (Fator de escala de 4x)
+                    tile: 0,                   // Campo 'tile' (Não usa tiling)
+                    face_enhance: false        // Campo 'face_enhance' (Desativado por padrão)
                 },
             }),
         });
 
         const startData = await startResponse.json();
 
-        // 🚨 VERIFICAÇÃO CRÍTICA 2: Diagnóstico de Erro
+        // 2. DIAGNÓSTICO DE ERRO (Token vs. Versão)
         if (startResponse.status !== 201) {
             console.error('Erro ao iniciar Replicate:', startData);
             let errorMessage = startData.detail || startData.message || 'Erro desconhecido.';
             
             if (startResponse.status === 401) {
-                // 401: Unauthorized - PROBLEMA DE PERMISSÃO/TOKEN
-                errorMessage = "O seu Token de API do Replicate (REPLICATE_API_TOKEN) está inválido. Por favor, gere um novo token no painel do Replicate.";
-            } else if (startResponse.status === 404) {
-                 // 404: Não Encontrado - A versão falhou novamente.
-                 errorMessage = "Erro interno: Falha na versão do modelo Replicate. Tente novamente ou verifique se o modelo 'tstramer/resrgan' está ativo.";
+                errorMessage = "FALHA DE PERMISSÃO (401): Seu REPLICATE_API_TOKEN está inválido. Por favor, verifique e gere um novo.";
+            } else if (errorMessage.includes("version does not exist")) {
+                 errorMessage = "FALHA NA VERSÃO (404): O ID da versão expirou novamente. Você deve obter o ID de versão mais recente do modelo 'xinntao/realesrgan'.";
             }
             
             return res.status(startResponse.status).json({ message: `Falha na previsão: ${errorMessage}` });
@@ -60,7 +62,7 @@ export default async function handler(req, res) {
 
         const predictionId = startData.id;
         
-        // 2. Sondar o resultado (Polling)
+        // 3. Sondagem (Polling) para obter o resultado
         let prediction = startData;
         while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -71,20 +73,17 @@ export default async function handler(req, res) {
             prediction = await pollResponse.json();
 
             if (prediction.status === 'failed') {
-                console.error('Previsão Replicate Falhou:', prediction);
                 return res.status(500).json({ message: `O processamento AI falhou: ${prediction.error}` });
             }
         }
 
-        // 3. Retornar a URL da imagem upscaled
-        if (prediction.output && prediction.output.length > 0) {
-            const upscaledUrl = prediction.output[0];
-            return res.status(200).json({ 
-                upscaledUrl: upscaledUrl,
-                message: 'Upscale concluído com sucesso.'
-            });
+        // 4. Retornar a URL
+        if (prediction.output && typeof prediction.output === 'string') {
+            // A saída é uma string URI (URL do arquivo) conforme o esquema
+            const upscaledUrl = prediction.output; 
+            return res.status(200).json({ upscaledUrl: upscaledUrl, message: 'Upscale concluído com sucesso.' });
         } else {
-             return res.status(500).json({ message: 'O Replicate retornou um resultado vazio ou inesperado.' });
+             return res.status(500).json({ message: 'O Replicate retornou um resultado inesperado. Saída: ' + JSON.stringify(prediction.output) });
         }
 
     } catch (error) {
