@@ -2,8 +2,8 @@ import fetch from 'node-fetch';
 
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
-// USANDO O ID DA VERSÃO ESTÁVEL (sczhou/codeformer:v1.3)
-const REPLICATE_MODEL_VERSION = "7de2ea2a1c0d59265c0934988f83039d91cb6f24d4c82c6218c5ff217d8004f1"; 
+// USANDO A SINTAXE MAIS ESTÁVEL: "user/model:latest"
+const REPLICATE_MODEL_AND_VERSION = "tstramer/resrgan:latest"; 
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 1. INICIAR PREVISÃO
+        // 1. INICIAR PREVISÃO usando o rótulo :latest
         const startResponse = await fetch("https://api.replicate.com/v1/predictions", {
             method: "POST",
             headers: {
@@ -30,11 +30,10 @@ export default async function handler(req, res) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                version: REPLICATE_MODEL_VERSION, // ID ESTÁVEL
+                version: REPLICATE_MODEL_AND_VERSION, 
                 input: {
-                    image: imageUrl, 
-                    face_upsample: true, 
-                    codeformer_fidelity: 0.5 
+                    image: imageUrl, // Campo de entrada deste modelo é 'image'
+                    scale: 4, 
                 },
             }),
         });
@@ -46,12 +45,12 @@ export default async function handler(req, res) {
             console.error('Erro ao iniciar Replicate:', startData);
             let errorMessage = startData.detail || startData.message || 'Erro desconhecido.';
             
-            if (startResponse.status === 401) {
-                // Se for 401, a falha é no Token.
-                errorMessage = "FALHA DE PERMISSÃO (401): Seu Token está inválido. Por favor, **gere um novo Token**.";
-            } else if (startData.detail && startData.detail.includes("version does not exist")) {
-                 // Se o 404 persistir, não há mais como contornar.
-                 errorMessage = "FALHA FINAL NA VERSÃO (404): O Replicate está rejeitando a versão estável. O serviço pode estar em manutenção ou o Token é a única falha restante.";
+            // Se o erro for a versão, mostra o problema:
+            if (startResponse.status === 404) {
+                errorMessage = "ERRO 404 FINAL: O Replicate não aceita o rótulo ':latest' para este modelo. A falha é puramente da API do Replicate.";
+            } else if (startResponse.status === 401) {
+                // Caso o novo token tenha falhado por algum motivo.
+                errorMessage = "FALHA DE PERMISSÃO (401): O Token falhou mesmo sendo novo.";
             }
             
             return res.status(startResponse.status).json({ message: `Falha na previsão: ${errorMessage}` });
