@@ -2,9 +2,9 @@ import fetch from 'node-fetch';
 
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
-// NOVO ID DA VERSÃO CORRIGIDA (xinntao/realesrgan)
-// Este ID está fixado no commit mais recente do modelo.
-const REPLICATE_MODEL_VERSION = "7b58129048a176846747d6929a56526ac87f6515c0e81b67f1b40289f64e0a4f"; 
+// USANDO UM MODELO DE SUPER-RESOLUÇÃO DIFERENTE E MAIS ESTÁVEL: tstramer/resrgan
+// ID da Versão MAIS ESTÁVEL: 195724285871f3918a93a8e97cc9611f7c5553b5e40e2b3c7b3967814b748281
+const REPLICATE_MODEL_VERSION = "195724285871f3918a93a8e97cc9611f7c5553b5e40e2b3c7b3967814b748281"; 
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 
-    // CRÍTICO: Verifica a existência do Token (Permissão)
+    // 🚨 VERIFICAÇÃO CRÍTICA 1: Token (Permissão)
     if (!REPLICATE_API_TOKEN) {
         return res.status(500).json({ message: 'Erro: REPLICATE_API_TOKEN não está configurada.' });
     }
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                version: REPLICATE_MODEL_VERSION, // ID corrigido
+                version: REPLICATE_MODEL_VERSION, // Usando o modelo estável
                 input: {
                     image: imageUrl, 
                     scale: 4, 
@@ -42,17 +42,17 @@ export default async function handler(req, res) {
 
         const startData = await startResponse.json();
 
-        // Checagem de erro para diagnosticar se é problema de Token ou Versão
+        // 🚨 VERIFICAÇÃO CRÍTICA 2: Diagnóstico de Erro
         if (startResponse.status !== 201) {
             console.error('Erro ao iniciar Replicate:', startData);
             let errorMessage = startData.detail || startData.message || 'Erro desconhecido.';
             
             if (startResponse.status === 401) {
-                // 401: Unauthorized - Quase sempre Token/Permissão errada
-                errorMessage = "Token Inválido (401). Verifique se o REPLICATE_API_TOKEN está correto e ativo.";
-            } else if (startData.detail && startData.detail.includes("version does not exist")) {
-                 // Versão falhou, mesmo após correção
-                 errorMessage = "O ID da Versão do Modelo Replicate falhou novamente. Você precisa obter o ID de versão mais recente diretamente da página do modelo 'xinntao/realesrgan'.";
+                // 401: Unauthorized - PROBLEMA DE PERMISSÃO/TOKEN
+                errorMessage = "O seu Token de API do Replicate (REPLICATE_API_TOKEN) está inválido. Por favor, gere um novo token no painel do Replicate.";
+            } else if (startResponse.status === 404) {
+                 // 404: Não Encontrado - A versão falhou novamente.
+                 errorMessage = "Erro interno: Falha na versão do modelo Replicate. Tente novamente ou verifique se o modelo 'tstramer/resrgan' está ativo.";
             }
             
             return res.status(startResponse.status).json({ message: `Falha na previsão: ${errorMessage}` });
