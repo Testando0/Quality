@@ -8,16 +8,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Método não permitido.' });
   }
 
-  const { imageUrl } = req.body;
+  // Agora esperamos o arquivo codificado em Base64
+  const { imageBase64 } = req.body; 
   
-  // A CHAVE É LIDA AQUI, DE FORMA SEGURA
   const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
   if (!REPLICATE_API_TOKEN) {
     return res.status(500).json({ message: 'Token da API Replicate não configurado.' });
   }
-  if (!imageUrl) {
-    return res.status(400).json({ message: 'A URL da imagem é obrigatória.' });
+  if (!imageBase64) {
+    return res.status(400).json({ message: 'O arquivo de imagem é obrigatório.' });
   }
 
   try {
@@ -31,8 +31,9 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         version: REPLICATE_MODEL_VERSION, 
         input: {
-          image: imageUrl,
-          scale: 4, // Aumenta em 4x
+          // O Replicate aceita Base64 como entrada para 'image'
+          image: imageBase64,
+          scale: 4, 
         },
       }),
     });
@@ -41,10 +42,9 @@ export default async function handler(req, res) {
     const predictionUrl = startData.urls.get;
 
     // 2. AGUARDA O RESULTADO (POLLING)
-    // A API do Replicate funciona de forma assíncrona, exigindo que o backend verifique o status.
     let finalPrediction = startData;
     while (finalPrediction.status !== "succeeded" && finalPrediction.status !== "failed") {
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Espera 1.5s
+      await new Promise(resolve => setTimeout(resolve, 1500)); 
       
       const pollResponse = await fetch(predictionUrl, {
         headers: {
