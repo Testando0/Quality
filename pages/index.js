@@ -1,18 +1,18 @@
 import Head from 'next/head';
 import { useState, useMemo } from 'react';
 
-// Paleta Profissional Dark Monocromática com Destaque
-const ACCENT_COLOR = '#D32F2F'; // Vermelho Profissional (Mais sóbrio que o 600)
-const DARK_BG = '#0F0F0F';      // Fundo Principal, quase preto
-const CARD_BG = '#1A1A1A';      // Fundo do Container Principal
+// Paleta Profissional Clean Dark
+const ACCENT_COLOR = '#D32F2F'; // Vermelho Profissional
+const DARK_BG = '#0A0A0A';      // Fundo Quase Preto
+const CARD_BG = '#151515';      // Fundo do Container Principal
 
 // Estilos Base (CSS-in-JS)
 const styles = {
     // Estilos Globais e Mobile-First
-    container: { fontFamily: 'Inter, sans-serif', padding: '0', margin: '0', backgroundColor: DARK_BG, minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', color: '#E0E0E0' },
+    container: { fontFamily: 'Inter, sans-serif', padding: '0', margin: '0', backgroundColor: DARK_BG, minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', color: '#F0F0F0' },
     
-    // Container Principal (Card) - Sombra suave e escura, sem bordas
-    main: { maxWidth: '1000px', width: '95%', margin: '30px auto', backgroundColor: CARD_BG, padding: '30px 20px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0, 0, 0, 0.7)' },
+    // Container Principal (Card) - Sombra limpa, sem bordas
+    main: { maxWidth: '1000px', width: '95%', margin: '30px auto', backgroundColor: CARD_BG, padding: '35px 20px', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0, 0, 0, 0.9)' },
     
     // Título e Subtítulo
     title: { color: ACCENT_COLOR, textAlign: 'center', marginBottom: '8px', fontSize: '2rem', fontWeight: 700 },
@@ -32,15 +32,15 @@ const styles = {
     error: { color: '#FFEB3B', padding: '12px', backgroundColor: '#383015', borderLeft: '4px solid #FFEB3B', borderRadius: '4px', textAlign: 'center', marginBottom: '20px' },
     loadingText: { color: ACCENT_COLOR, fontSize: '1.1em', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 0' },
     
-    // Área de Resultados e Imagens
-    imageContainer: { marginTop: '20px', borderTop: '1px solid #222', paddingTop: '20px', textAlign: 'center' },
-    resultTitle: { color: '#F0F0F0', fontSize: '1.4rem', marginBottom: '20px', borderBottom: `1px solid ${ACCENT_COLOR}`, paddingBottom: '8px', fontWeight: 600 },
+    // Área de Resultados (Linha divisória removida ou suavizada)
+    imageContainer: { marginTop: '20px', paddingTop: '20px', textAlign: 'center' },
+    resultTitle: { color: '#F0F0F0', fontSize: '1.4rem', marginBottom: '20px', borderBottom: `1px solid #222222`, paddingBottom: '8px', fontWeight: 600 },
     
     // Layout do Comparativo (Mobile: Coluna)
     imageWrapper: { display: 'flex', gap: '15px', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', marginBottom: '25px' },
     
-    // Imagem (Crucial: Sem borda branca ou clara)
-    image: { maxWidth: '100%', height: 'auto', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.6)', border: 'none' },
+    // Imagem (Nenhuma Borda e Sombra sutil)
+    image: { maxWidth: '100%', height: 'auto', borderRadius: '6px', boxShadow: '0 0 5px rgba(0, 0, 0, 0.7)', border: 'none' }, 
     
     // Link de Download
     downloadLink: { display: 'inline-block', padding: '12px 25px', backgroundColor: ACCENT_COLOR, color: 'white', textDecoration: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', transition: 'background-color 0.3s' },
@@ -134,6 +134,7 @@ export default function Home() {
                 
                 {/* Estilos Responsivos Otimizados */}
                 <style dangerouslySetInnerHTML={{__html: `
+                    /* O estilo 'border: none' foi forçado na imagem e no container */
                     @media (min-width: 768px) {
                         .main-container { margin-top: 40px; padding: 40px; }
                         .form-container { flex-wrap: nowrap; }
