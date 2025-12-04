@@ -1,70 +1,82 @@
 import fetch from 'node-fetch';
 
-// ID do modelo Real-ESRGAN (Upscaling 4x)
-const REPLICATE_MODEL_VERSION = "c7667d26b81d77a943a02c31e670407a51d8d21b65e2361099e2f6439a3f28d3";
+const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+
+// ID do Modelo Replicate para Upscale (usando o Real-ESRGAN, popular para 4x)
+const REPLICATE_MODEL_VERSION = "42fed1c4974146d4d2414e2be2c5277c7f7fab052204f7fd9c181d40306c50be";
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Método não permitido.' });
-  }
-
-  // Agora esperamos o arquivo codificado em Base64
-  const { imageBase64 } = req.body; 
-  
-  const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
-
-  if (!REPLICATE_API_TOKEN) {
-    return res.status(500).json({ message: 'Token da API Replicate não configurado.' });
-  }
-  if (!imageBase64) {
-    return res.status(400).json({ message: 'O arquivo de imagem é obrigatório.' });
-  }
-
-  try {
-    // 1. INICIA A REQUISIÇÃO DE UPSCALING
-    const startResponse = await fetch("https://api.replicate.com/v1/predictions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Token ${REPLICATE_API_TOKEN}`,
-      },
-      body: JSON.stringify({
-        version: REPLICATE_MODEL_VERSION, 
-        input: {
-          // O Replicate aceita Base64 como entrada para 'image'
-          image: imageBase64,
-          scale: 4, 
-        },
-      }),
-    });
-
-    const startData = await startResponse.json();
-    const predictionUrl = startData.urls.get;
-
-    // 2. AGUARDA O RESULTADO (POLLING)
-    let finalPrediction = startData;
-    while (finalPrediction.status !== "succeeded" && finalPrediction.status !== "failed") {
-      await new Promise(resolve => setTimeout(resolve, 1500)); 
-      
-      const pollResponse = await fetch(predictionUrl, {
-        headers: {
-          "Authorization": `Token ${REPLICATE_API_TOKEN}`,
-        },
-      });
-      finalPrediction = await pollResponse.json();
+    if (req.method !== 'POST') {
+        res.setHeader('Allow', ['POST']);
+        return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 
-    if (finalPrediction.status === "failed") {
-      throw new Error(finalPrediction.error || "A predição falhou.");
+    if (!REPLICATE_API_TOKEN) {
+        return res.status(500).json({ message: 'Erro interno no servidor: A chave REPLICATE_API_TOKEN não está configurada.' });
     }
     
-    // 3. DEVOLVE A URL DA IMAGEM MELHORADA
-    const upscaledUrl = finalPrediction.output[0];
+    const { imageUrl } = req.body;
 
-    res.status(200).json({ upscaledUrl });
+    if (!imageUrl) {
+        return res.status(400).json({ message: 'URL da imagem não fornecida.' });
+    }
 
-  } catch (error) {
-    console.error('Erro na API Replicate:', error.message);
-    res.status(500).json({ message: `Falha no Upscaling: ${error.message}` });
-  }
+    try {
+        // 1. Iniciar a previsão (upscale) no Replicate
+        const startResponse = await fetch("https://api.replicate.com/v1/predictions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Token ${REPLICATE_API_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                version: REPLICATE_MODEL_VERSION,
+                input: {
+                    // O Replicate aceita a URL pública da imagem aqui
+                    image: imageUrl, 
+                    scale: 4, // Upscale de 4x
+                },
+            }),
+        });
+
+        const startData = await startResponse.json();
+
+        if (startResponse.status !== 201) {
+            console.error('Erro ao iniciar Replicate:', startData);
+            return res.status(500).json({ message: `Falha ao iniciar a previsão no Replicate: ${startData.detail || startData.message || 'Erro desconhecido.'}` });
+        }
+
+        const predictionId = startData.id;
+        
+        // 2. Sondar o resultado (Polling)
+        let prediction = startData;
+        while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo
+            
+            const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+                headers: { "Authorization": `Token ${REPLICATE_API_TOKEN}` },
+            });
+            prediction = await pollResponse.json();
+
+            if (prediction.status === 'failed') {
+                console.error('Previsão Replicate Falhou:', prediction);
+                return res.status(500).json({ message: `O processamento AI falhou: ${prediction.error}` });
+            }
+        }
+
+        // 3. Retornar a URL da imagem upscaled
+        if (prediction.output && prediction.output.length > 0) {
+            const upscaledUrl = prediction.output[0];
+            return res.status(200).json({ 
+                upscaledUrl: upscaledUrl,
+                message: 'Upscale concluído com sucesso.'
+            });
+        } else {
+             return res.status(500).json({ message: 'O Replicate retornou um resultado vazio.' });
+        }
+
+    } catch (error) {
+        console.error('Erro interno no servidor (Replicate):', error);
+        return res.status(500).json({ message: 'Erro interno no servidor durante o processamento AI.', error: error.message });
+    }
 }
