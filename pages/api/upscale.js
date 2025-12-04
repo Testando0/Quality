@@ -2,9 +2,9 @@ import fetch from 'node-fetch';
 
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
-// USANDO A ABORDAGEM MAIS ESTÁVEL: "user/model:latest"
-// O Replicate lida internamente com a versão mais recente.
-const REPLICATE_MODEL = "arielrosh/real-esrgan-4x"; // Modelo Real-ESRGAN de 4x
+// USANDO UM MODELO DE RESTAURAÇÃO DE IMAGEM ALTERNATIVO (sczhou/codeformer)
+// ID da Versão ESTÁVEL (sczhou/codeformer)
+const REPLICATE_MODEL_VERSION = "7de2ea2a1c0d59265c0934988f83039d91cb6f24d4c82c6218c5ff217d8004f1"; 
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 1. INICIAR PREVISÃO USANDO O RÓTULO "LATEST"
+        // 1. INICIAR PREVISÃO
         const startResponse = await fetch("https://api.replicate.com/v1/predictions", {
             method: "POST",
             headers: {
@@ -31,25 +31,26 @@ export default async function handler(req, res) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                // O formato é 'user/model@version'
-                version: `${REPLICATE_MODEL}:latest`, // Tenta usar o rótulo latest, ignorando o hash instável
+                version: REPLICATE_MODEL_VERSION,
                 input: {
-                    image: imageUrl, 
+                    image: imageUrl,             // Campo de entrada deste modelo é 'image'
+                    face_upsample: true,         // Parâmetro específico para melhoria de faces
+                    codeformer_fidelity: 0.5     // Nível de fidelidade
                 },
             }),
         });
 
         const startData = await startResponse.json();
 
-        // 2. DIAGNÓSTICO DE ERRO (Token vs. Versão)
+        // 2. DIAGNÓSTICO DE ERRO
         if (startResponse.status !== 201) {
             console.error('Erro ao iniciar Replicate:', startData);
             let errorMessage = startData.detail || startData.message || 'Erro desconhecido.';
             
             if (startResponse.status === 401) {
-                errorMessage = "FALHA DE PERMISSÃO (401): O Token está inválido. VOCÊ DEVE GERAR UM NOVO TOKEN REPLICATE.";
-            } else if (startResponse.status === 404) {
-                 errorMessage = "FALHA DE VERSÃO (404): O modelo não foi encontrado. O modelo 'arielrosh/real-esrgan-4x' foi removido ou está em manutenção.";
+                errorMessage = "FALHA DE PERMISSÃO (401): O Token está inválido. Por favor, **gere um novo Token**.";
+            } else if (startData.detail && startData.detail.includes("version does not exist")) {
+                 errorMessage = "FALHA NA VERSÃO (404): O ID do modelo falhou novamente. A única solução é a falha no Token.";
             }
             
             return res.status(startResponse.status).json({ message: `Falha na previsão: ${errorMessage}` });
@@ -73,8 +74,9 @@ export default async function handler(req, res) {
         }
 
         // 4. Retornar a URL
-        if (prediction.output && typeof prediction.output === 'string') {
-            const upscaledUrl = prediction.output; 
+        // O output deste modelo retorna um array, pegamos o primeiro elemento
+        if (prediction.output && prediction.output.length > 0) {
+            const upscaledUrl = prediction.output[0]; 
             return res.status(200).json({ upscaledUrl: upscaledUrl, message: 'Upscale concluído com sucesso.' });
         } else {
              return res.status(500).json({ message: 'O Replicate retornou um resultado inesperado.' });
