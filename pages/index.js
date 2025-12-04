@@ -3,24 +3,24 @@ import { useState, useMemo } from 'react';
 
 // Paleta de Cores:
 const ACCENT_COLOR = '#E53935'; // Vermelho Profissional (Red 600)
-const DARK_BG = '#1A1A1A';      // Fundo Escuro
-const CARD_BG = '#262626';      // Cor dos Cards/Containers
+const DARK_BG = '#121212';      // Fundo Escuro
+const CARD_BG = '#1E1E1E';      // Cor dos Cards/Containers
 
-// Estilos Responsivos (CSS-in-JS)
+// Estilos Base (CSS-in-JS)
 const styles = {
-    // Estilos Básicos e Mobile-First (Aplicados em todas as telas)
+    // Estilos Básicos e Mobile-First
     container: { fontFamily: 'Roboto, sans-serif', padding: '0', margin: '0', backgroundColor: DARK_BG, minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', color: '#f0f0f0' },
-    main: { maxWidth: '1000px', width: '95%', margin: '20px auto', backgroundColor: CARD_BG, padding: '25px', borderRadius: '15px', boxShadow: '0 8px 30px rgba(0, 0, 0, 0.7)' },
+    main: { maxWidth: '1000px', width: '95%', margin: '20px auto', backgroundColor: CARD_BG, padding: '25px', borderRadius: '15px', boxShadow: '0 5px 20px rgba(0, 0, 0, 0.9)' },
     title: { color: ACCENT_COLOR, textAlign: 'center', marginBottom: '10px', fontSize: '2rem' },
     subtitle: { color: '#b0b0b0', textAlign: 'center', marginBottom: '30px', fontSize: '1rem' },
     form: { display: 'flex', gap: '10px', marginBottom: '30px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' },
     
-    // Estilo da Label de Upload (Input de arquivo)
+    // Label de Upload
     fileInputLabel: {
-        flex: '1 1 100%', padding: '15px', borderRadius: '10px', border: `1px dashed ${ACCENT_COLOR}`, backgroundColor: '#333333', color: '#f0f0f0', fontSize: '1rem', cursor: 'pointer', textAlign: 'center', transition: 'background-color 0.3s'
+        flex: '1 1 100%', padding: '15px', borderRadius: '10px', border: `1px dashed ${ACCENT_COLOR}`, backgroundColor: '#2C2C2C', color: '#f0f0f0', fontSize: '1rem', cursor: 'pointer', textAlign: 'center', transition: 'background-color 0.3s'
     },
     
-    // Estilo do Botão
+    // Botão
     button: { flex: '1 1 100%', padding: '15px 25px', backgroundColor: ACCENT_COLOR, color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', transition: 'background-color 0.3s' },
     buttonDisabled: { backgroundColor: '#444444', cursor: 'not-allowed' },
 
@@ -29,27 +29,17 @@ const styles = {
     loadingText: { color: ACCENT_COLOR, fontSize: '1.1em', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     
     // Área de Resultados
-    imageContainer: { marginTop: '25px', borderTop: '1px solid #444', paddingTop: '20px', textAlign: 'center' },
+    imageContainer: { marginTop: '25px', borderTop: '1px solid #333', paddingTop: '20px', textAlign: 'center' },
     resultTitle: { color: '#f0f0f0', fontSize: '1.5rem', marginBottom: '20px', borderBottom: `2px solid ${ACCENT_COLOR}`, paddingBottom: '8px' },
     
-    // Comparativo (Layout em Coluna no Mobile)
+    // Comparativo (Padrão mobile: Coluna)
     imageWrapper: { display: 'flex', gap: '15px', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', marginBottom: '25px' },
-    image: { maxWidth: '100%', height: 'auto', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.4)', border: '1px solid #444' },
+    image: { maxWidth: '100%', height: 'auto', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)', border: 'none' },
     
     // Link de Download
     downloadLink: { display: 'inline-block', padding: '12px 25px', backgroundColor: '#FF7043', color: DARK_BG, textDecoration: 'none', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem', transition: 'background-color 0.3s' },
-    
-    // Media Query para Desktop (> 768px) - Reorganiza Form e Imagens
-    '@media (min-width: 768px)': {
-        main: { padding: '40px' },
-        title: { fontSize: '3rem' },
-        form: { flexWrap: 'nowrap' },
-        fileInputLabel: { flex: '1 1 65%' },
-        button: { flex: '1 1 30%' },
-        imageWrapper: { flexDirection: 'row' }, // Volta para Linha no Desktop
-        image: { maxWidth: '45%' },
-    }
 };
+
 
 export default function Home() {
     const [imageFile, setImageFile] = useState(null);
@@ -101,7 +91,7 @@ export default function Home() {
             }
             
             const uploadedUrl = uploadData.publicUrl;
-            setOriginalPublicUrl(uploadedUrl);
+            setOriginalPublicUrl(uploadedUrl); 
 
             // 2. UPSCALING (Replicate via Vercel API)
             const upscaleResponse = await fetch('/api/upscale', {
@@ -134,19 +124,23 @@ export default function Home() {
             <Head>
                 <title>AI Upscaler Pro</title>
                 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
-                {/* Adicionando estilos responsivos diretamente no Head */}
+                {/* Estilos Responsivos Otimizados (Media Queries) */}
                 <style dangerouslySetInnerHTML={{__html: `
                     @media (min-width: 768px) {
+                        /* Layouts de Desktop */
+                        .main-container { margin-top: 40px; }
                         .form-container { flex-wrap: nowrap; }
-                        .file-label { flex: 1 1 65%; }
-                        .submit-button { flex: 1 1 30%; }
+                        .file-label { flex: 1 1 65% !important; }
+                        .submit-button { flex: 1 1 30% !important; }
+                        
+                        /* Layout do Comparativo */
                         .image-wrapper { flex-direction: row !important; }
                         .comp-image { max-width: 45% !important; }
                     }
                 `}} />
             </Head>
 
-            <main style={styles.main}>
+            <main style={styles.main} className="main-container">
                 <h1 style={styles.title}>Super Resolução AI 🔥</h1>
                 <p style={styles.subtitle}>Upload, processamento e resultados otimizados para qualquer dispositivo.</p>
                 
@@ -180,7 +174,7 @@ export default function Home() {
                     {(previewUrl && !upscaledUrl && !isLoading) && (
                         <div style={styles.result}>
                             <h2 style={styles.resultTitle}>Pré-visualização</h2>
-                            <img src={previewUrl} alt="Pré-visualização Original" style={{ ...styles.image, maxWidth: '500px' }} />
+                            <img src={previewUrl} alt="Pré-visualização Original" style={{ ...styles.image }} className="comp-image" />
                         </div>
                     )}
 
