@@ -2,8 +2,9 @@ import fetch from 'node-fetch';
 
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
-// ID da Versão CORRETA e ATUALIZADA do modelo Real-ESRGAN (xinntao/realesrgan)
-const REPLICATE_MODEL_VERSION = "1b976a4d456ed9e4d1a846597b7614e79eadad3032e9124fa63859db0fd59b56"; 
+// USANDO UM MODELO REAL-ESRGAN ALTERNATIVO E MAIS ESTÁVEL (lucataco/real-esrgan)
+// ID da Versão ESTÁVEL para lucataco/real-esrgan
+const REPLICATE_MODEL_VERSION = "0c6416d25287f32997637841824c3a1040445d8b8e3a2db65c71172a2ff8f17a"; 
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -30,20 +31,20 @@ export default async function handler(req, res) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                version: REPLICATE_MODEL_VERSION, // Usa a versão corrigida
+                version: REPLICATE_MODEL_VERSION, // Usa a versão estável
                 input: {
                     image: imageUrl, 
                     scale: 4, 
-                    version: "General - v3", // Usando a sub-versão geral otimizada
                 },
             }),
         });
 
         const startData = await startResponse.json();
 
+        // Checagem de erro mais detalhada da API Replicate
         if (startResponse.status !== 201) {
             console.error('Erro ao iniciar Replicate:', startData);
-            return res.status(500).json({ message: `Falha ao iniciar a previsão no Replicate: ${startData.detail || startData.message || 'Erro desconhecido.'}` });
+            return res.status(500).json({ message: `Falha ao iniciar a previsão no Replicate: ${startData.detail || startData.message || 'Erro desconhecido.'}. Verifique se o seu REPLICATE_API_TOKEN está correto no Vercel.` });
         }
 
         const predictionId = startData.id;
@@ -51,8 +52,7 @@ export default async function handler(req, res) {
         // 2. Sondar o resultado (Polling)
         let prediction = startData;
         while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
-            // Pequena pausa para evitar sobrecarga de chamadas
-            await new Promise(resolve => setTimeout(resolve, 1000)); 
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo
             
             const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
                 headers: { "Authorization": `Token ${REPLICATE_API_TOKEN}` },
